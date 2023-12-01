@@ -1,52 +1,116 @@
 
+//-----------------------------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <stdbool.h>
+#include <time.h>
 
-#define MAX_SEQ_NUM 256
+//-----------------------------------------------------------------------------------------------
 
-void send_packet(int packet_no) {
-    printf("Sending packet %d\n", packet_no);
+#define PacketLimit 1024 //arbitrary for defining sizes within code
+
+//-----------------------------------------------------------------------------------------------
+
+int windowSize;
+int nop;
+int windowStartingNumIndex = 0;
+int nextNumIndex = 0;
+int sequence[PacketLimit];
+
+bool responses[PacketLimit];
+
+//-----------------------------------------------------------------------------------------------
+
+//Random packet drop -> 100 / x = % of loss -> so x = 20 = 5% ... x = 5 = 20% ... etc. 
+bool percentDrop()
+{
+    return (rand() % 2) == 0;
 }
 
-bool is_packet_lost() {
-    // Simulate packet loss with a 10% chance
-    return (rand() % 10) == 0;
+//-----------------------------------------------------------------------------------------------
+
+void send( int passed )
+{
+
+    printf("Packet %d sent.\t", passed);
+
+    if( !percentDrop() )
+    {
+        //printf("Packet %d acknowledged.\n", passed);
+        printf("\n");
+        
+        responses[passed] = true;
+    }
+    
+    else
+    {
+        printf("Packet %d lost.\n", passed);
+
+        responses[passed] = false;
+    }
 }
 
-int main() {
-    srand(time(NULL)); // Seed the random number generator
+//-----------------------------------------------------------------------------------------------
 
-    int window_size, total_packets, base = 0, next_seq_num = 0;
-    bool acked[MAX_SEQ_NUM] = {false}; // Acknowledgement status of packets
+int main()
+{
+    srand( time(NULL) );
 
-    printf("Enter the window size: ");
-    scanf("%d", &window_size);
+    printf("\nEnter the window size: ");
+    scanf("%d", &windowSize);
 
     printf("Enter the total number of packets to send: ");
-    scanf("%d", &total_packets);
+    scanf("%d", &nop);
 
-    while(base < total_packets) {
-        while(next_seq_num < base + window_size && next_seq_num < total_packets) {
-            if(!is_packet_lost()) {
-                send_packet(next_seq_num);
-                acked[next_seq_num] = true;
-            } else {
-                printf("Packet %d lost\n", next_seq_num);
-            }
-            next_seq_num++;
-        }
+    printf("Enter the sequence numbers of the packets to be sent: ");
+    
+    for( int i = 0; i < nop; i++ )
+    {
+        scanf("%d", &sequence[i]);
 
-        // Simulate receiving ACK for the base packet
-        printf("Received ACK for packet %d\n", base);
-        base++;
-
-        // For simplicity, we immediately move the window after receiving an ACK
-        // A real implementation would wait for a timeout or a certain number of ACKs
+        responses[ sequence[i] ] = false;
     }
 
-    printf("All packets have been sent successfully.\n");
+    printf("\n");
+
+    while( windowStartingNumIndex < nop )
+    {
+        while( nextNumIndex < windowStartingNumIndex + windowSize && nextNumIndex < nop )
+        {
+            send( sequence[nextNumIndex] );
+            
+            nextNumIndex++;
+        }
+
+        while( windowStartingNumIndex < nop && responses[ sequence[ windowStartingNumIndex ] ] )
+        {
+            printf("Sliding window: base packet %d acknowledged.\n", sequence[windowStartingNumIndex] );
+
+            windowStartingNumIndex++;
+        }
+
+        for( int i = windowStartingNumIndex; i < nextNumIndex; i++ )
+        {
+            if( !responses[ sequence[i] ] )
+            {
+                printf("\nResending lost packet %d.\n", sequence[i]);
+
+                send( sequence[i] );
+            }
+        }
+
+        printf("\nWindow: [");
+        
+        for( int i = windowStartingNumIndex; i < windowStartingNumIndex + windowSize && i < nop; i++ )
+        {
+            printf(" %d", sequence[i]);
+        }
+
+        printf(" ]\n\n");
+    }
+
+    printf("All packets have been sent and acknowledged.\n");
 
     return 0;
 }
