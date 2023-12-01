@@ -12,10 +12,11 @@
 
 //-----------------------------------------------------------------------------------------------
 
-int windowSize;
-int nop;
+int windowSize = 0;
+int nop = 0;
 int windowStartingNumIndex = 0;
 int nextNumIndex = 0;
+
 int sequence[ PacketLimit ];
 
 bool responses[ PacketLimit ];
