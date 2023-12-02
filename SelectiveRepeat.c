@@ -11,7 +11,9 @@
 #define PacketLimit 1024 //arbitrary for defining sizes within code
 
 //-----------------------------------------------------------------------------------------------
-
+/*
+    Global variables
+*/
 int windowSize = 0;
 int nop = 0;
 int windowStartingNumIndex = 0;
@@ -22,15 +24,38 @@ int sequence[ PacketLimit ];
 bool responses[ PacketLimit ];
 
 //-----------------------------------------------------------------------------------------------
+/*
+    Random function to simulate the timeout of the protocol. Since this is not a time
+    based code this will act as if the time has ran out and the packet needs to be 
+    retransmitted. For the main report this value will be locked at a 12.5% chance.
 
-//Random packet drop -> 100 / x = % of loss -> so x = 20 = 5% ... x = 5 = 20% ... etc. 
+    This function accepts no input and is only called to return true or false (bool)
+    to say whether or not that packet was lost. The function is seeded in main using
+    the time of the "host" computer and will vary each and every compile. The function 
+    uses modulo to determine the percent chance and can be thought of better as:
+        100 / x = % of loss
+            
+            x = 20 = 5% chance of loss
+            x = 5 = 20% chance of loss
+            x = 8 = 12.5% chance of loss
+            etc etc
+    
+    Note that this is a random function and as randomness cannot garuntee anything, it is
+    possible for the packets to never be lost or always be lost; and this code is NOT optimized
+    for those edge cases. Though EXTREMELY unlikely, randomness could produce these results.
+*/
 bool percentDrop()
 {
     return( rand() % 8 ) == 0;
 }
 
 //-----------------------------------------------------------------------------------------------
-
+/*
+    Function used to send and ackknowledge the packets. Accepts the packet int from main and updates
+    the respones array but does not have an explicit return type...is of type void.
+    
+    Proccess the int by calling the percentDrop function to decide if it was recieved or not. 
+*/
 void send( int passed )
 {
 
@@ -53,7 +78,13 @@ void send( int passed )
 }
 
 //-----------------------------------------------------------------------------------------------
-
+/*
+    Main function, accepts standard inputs for window size, number of packets, and the value for
+    each of these packets. Drives the simulator by doing most of the printing, maintains while
+    conditions to ensure all packets are eventually acknowledged, and slides the window as needed. 
+    Also seeds randomness value as mentioned above in that function's description comment. 
+    Returns type int though is the standard main return type.
+*/
 int main()
 {
     srand( time(NULL) );
@@ -116,4 +147,16 @@ int main()
     return 0;
 }
 
+//-----------------------------------------------------------------------------------------------
+/*
+    Selective Repeat Simulator
+    Computer Communication Networks
+    EEL 4781 - Project 2 - Fall 2023
+    Proffessor: Saleem Sahawneh 
+    University of Central Florida
+
+    Written by: Andrew Fugate
+
+    Last updated: 12/1/2023
+*/
 //-----------------------------------------------------------------------------------------------
